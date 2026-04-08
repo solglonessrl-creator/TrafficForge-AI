@@ -14,6 +14,6 @@ groq
 stripe
 python-jose[cryptography]
 passlib[bcrypt]
-google-generativeai
+google-genai
 apscheduler
 feedparser

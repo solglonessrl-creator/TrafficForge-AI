@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import feedparser
 import httpx
-import google.generativeai as genai
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -22,6 +21,11 @@ from ..core.storage import read_json, utc_now_iso, write_json
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / "templates"))
+
+try:
+    from google import genai as google_genai
+except Exception:
+    google_genai = None
 
 
 Provider = Literal["openai", "groq", "gemini"]
@@ -48,12 +52,22 @@ def _slugify(text: str) -> str:
 def _get_ai_clients() -> Tuple[Optional[OpenAI], Optional[Groq], Optional[Any]]:
     client_openai = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
     client_groq = Groq(api_key=settings.GROQ_API_KEY) if settings.GROQ_API_KEY else None
-    if settings.GEMINI_API_KEY:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        client_gemini = genai.GenerativeModel("gemini-pro")
-    else:
-        client_gemini = None
+    client_gemini = (
+        google_genai.Client(api_key=settings.GEMINI_API_KEY)
+        if settings.GEMINI_API_KEY and google_genai
+        else None
+    )
     return client_openai, client_groq, client_gemini
+
+
+def _gemini_text(result) -> str:
+    text = getattr(result, "text", None)
+    if isinstance(text, str) and text.strip():
+        return text.strip()
+    try:
+        return str(result.candidates[0].content.parts[0].text).strip()
+    except Exception:
+        return str(result).strip()
 
 
 def _ai_generate(provider: Provider, prompt: str) -> str:
@@ -62,8 +76,11 @@ def _ai_generate(provider: Provider, prompt: str) -> str:
     if provider == "gemini":
         if not client_gemini:
             raise HTTPException(status_code=400, detail="Gemini no está configurado.")
-        result = client_gemini.generate_content(prompt)
-        return (result.text or "").strip()
+        result = client_gemini.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+        return _gemini_text(result)
 
     if provider == "groq":
         if not client_groq:

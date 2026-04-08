@@ -2,11 +2,16 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from openai import OpenAI
 from groq import Groq
-import google.generativeai as genai
 from ..core.config import settings
 from .auth import get_current_user
 
 router = APIRouter()
+
+try:
+    from google import genai as google_genai
+except Exception:
+    google_genai = None
+
 
 class LeadMessage(BaseModel):
     lead_id: str
@@ -17,11 +22,21 @@ class LeadMessage(BaseModel):
 client_openai = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
 client_groq = Groq(api_key=settings.GROQ_API_KEY) if settings.GROQ_API_KEY else None
 
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    client_gemini = genai.GenerativeModel('gemini-pro')
-else:
-    client_gemini = None
+client_gemini = (
+    google_genai.Client(api_key=settings.GEMINI_API_KEY)
+    if settings.GEMINI_API_KEY and google_genai
+    else None
+)
+
+
+def _gemini_text(result) -> str:
+    text = getattr(result, "text", None)
+    if isinstance(text, str) and text.strip():
+        return text.strip()
+    try:
+        return str(result.candidates[0].content.parts[0].text).strip()
+    except Exception:
+        return str(result).strip()
 
 # Script base de ventas
 SALES_CONTEXT = """
@@ -53,9 +68,11 @@ async def chat_with_lead(request: LeadMessage, current_user: dict = Depends(get_
         elif request.provider == "gemini":
             if not client_gemini:
                 raise HTTPException(status_code=400, detail="Gemini no está configurado.")
-            chat = client_gemini.start_chat(history=[])
-            response = chat.send_message(f"{SALES_CONTEXT}\n\nLead dice: {request.message}")
-            ai_response = response.text
+            response = client_gemini.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=f"{SALES_CONTEXT}\n\nLead dice: {request.message}",
+            )
+            ai_response = _gemini_text(response)
         else:
             if not client_openai:
                 raise HTTPException(status_code=400, detail="OpenAI no está configurado.")
