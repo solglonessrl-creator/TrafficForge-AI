@@ -3,7 +3,8 @@ from pydantic import BaseModel
 import stripe
 import uuid
 from ..core.config import settings
-from ..core.storage import read_json, utc_now_iso, write_json
+from ..core.storage import utc_now_iso
+from ..core import repo
 
 router = APIRouter()
 
@@ -25,18 +26,15 @@ async def capture_lead(lead: LeadCapture):
     Captura un nuevo lead.
     """
     try:
-        leads = read_json("leads", default={})
-        leads_dict = leads if isinstance(leads, dict) else {}
         lead_id = uuid.uuid4().hex
-        leads_dict[lead_id] = {
+        repo.insert_lead({
             "id": lead_id,
             "name": lead.name,
             "email": lead.email,
             "whatsapp": lead.whatsapp,
             "source": lead.source,
             "created_at": utc_now_iso(),
-        }
-        write_json("leads", leads_dict)
+        })
 
         # URL de redirección a WhatsApp para el cierre de venta
         wa_message = f"Hola, vengo de TrafficForge AI y quiero más información sobre vuestros servicios."
@@ -109,11 +107,10 @@ async def get_stats():
     """
     Devuelve estadísticas básicas del embudo.
     """
-    leads = read_json("leads", default={})
-    leads_dict = leads if isinstance(leads, dict) else {}
+    leads_list = repo.list_leads()
     sources = {}
     conversions_whatsapp = 0
-    for lead in leads_dict.values():
+    for lead in leads_list:
         if not isinstance(lead, dict):
             continue
         source = str(lead.get("source") or "unknown")
@@ -122,7 +119,7 @@ async def get_stats():
             conversions_whatsapp += 1
 
     return {
-        "total_leads": len(leads_dict),
+        "total_leads": len(leads_list),
         "conversions_whatsapp": conversions_whatsapp,
         "sales_closed": 0,
         "sources": sources,

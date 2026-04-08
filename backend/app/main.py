@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from .core.config import settings
 from .core.scheduler import start_scheduler, stop_scheduler
-from .core.storage import read_json
+from .core import repo
 from .modules import traffic, automation, chatbot, funnel, email_service, analysis, organic
 
 app = FastAPI(title=settings.PROJECT_NAME, docs_url=None, redoc_url=None)
@@ -35,17 +35,12 @@ async def docs():
 
 
 def _compute_stats():
-    analytics = read_json("analytics", default={"pageviews": {}, "referrers": {}})
-    pageviews = analytics.get("pageviews") if isinstance(analytics.get("pageviews"), dict) else {}
-    visitors = int(sum(int(v) for v in pageviews.values() if isinstance(v, (int, float, str)) and str(v).isdigit()))
+    pageviews = repo.get_pageviews()
+    visitors = int(sum(int(v) for v in pageviews.values()))
 
-    leads = read_json("leads", default={})
-    leads_dict = leads if isinstance(leads, dict) else {}
-    leads_captured = len(leads_dict)
+    leads_captured = len(repo.list_leads())
 
-    posts = read_json("posts", default={})
-    posts_dict = posts if isinstance(posts, dict) else {}
-    published_posts = sum(1 for p in posts_dict.values() if isinstance(p, dict) and p.get("status") == "published")
+    published_posts = sum(1 for p in repo.list_posts(status="published") if isinstance(p, dict))
 
     conversion_rate = "0%"
     if visitors > 0:
@@ -59,11 +54,7 @@ def _compute_stats():
     }
 
 def _bots_preview():
-    tasks = read_json("automation_tasks", default={})
-    tasks_dict = tasks if isinstance(tasks, dict) else {}
-    items = [t for t in tasks_dict.values() if isinstance(t, dict)]
-    items.sort(key=lambda x: x.get("created_at") or "", reverse=True)
-    return items[:8]
+    return repo.list_tasks(limit=8)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -83,20 +74,17 @@ async def root(request: Request):
 
 @app.get("/bots", response_class=HTMLResponse, include_in_schema=False)
 async def bots_page(request: Request):
-    tasks = read_json("automation_tasks", default={})
-    tasks_dict = tasks if isinstance(tasks, dict) else {}
-    bots = list(tasks_dict.values())
+    bots = repo.list_tasks(limit=200)
     template = templates.env.get_template("bots.html")
     html = template.render(request=request, bots=bots, landing_url=settings.LANDING_PAGE_URL)
     return HTMLResponse(content=html)
 
 @app.get("/leads", response_class=HTMLResponse, include_in_schema=False)
 async def leads_page(request: Request):
-    leads = read_json("leads", default={})
-    leads_dict = leads if isinstance(leads, dict) else {}
+    leads_list = repo.list_leads()
     sources = {}
     conversions_whatsapp = 0
-    for lead in leads_dict.values():
+    for lead in leads_list:
         if not isinstance(lead, dict):
             continue
         source = str(lead.get("source") or "unknown")
@@ -105,7 +93,7 @@ async def leads_page(request: Request):
             conversions_whatsapp += 1
 
     stats = {
-        "total_leads": len(leads_dict),
+        "total_leads": len(leads_list),
         "conversions_whatsapp": conversions_whatsapp,
         "sales_closed": 0,
         "sources": sources,

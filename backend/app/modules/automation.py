@@ -3,7 +3,8 @@ from pydantic import BaseModel
 import subprocess
 import os
 import uuid
-from ..core.storage import read_json, utc_now_iso, write_json
+from ..core.storage import utc_now_iso
+from ..core import repo
 
 router = APIRouter()
 
@@ -21,16 +22,13 @@ async def run_automation(request: AutomationRequest):
     
     try:
         task_id = uuid.uuid4().hex
-        tasks = read_json("automation_tasks", default={})
-        tasks_dict = tasks if isinstance(tasks, dict) else {}
-        tasks_dict[task_id] = {
+        repo.upsert_task({
             "id": task_id,
             "name": f"Bot {request.account_id}",
             "status": "RUNNING",
             "activity": f"Acción={request.action} URL={request.target_url}",
             "created_at": utc_now_iso(),
-        }
-        write_json("automation_tasks", tasks_dict)
+        })
 
         subprocess.Popen([
             "python", script_path, 
@@ -47,11 +45,10 @@ async def get_status():
     """
     Estado de bots basado en tareas registradas.
     """
-    tasks = read_json("automation_tasks", default={})
-    tasks_dict = tasks if isinstance(tasks, dict) else {}
-    active_bots = sum(1 for t in tasks_dict.values() if isinstance(t, dict) and t.get("status") == "RUNNING")
+    tasks_list = repo.list_tasks(limit=500)
+    active_bots = sum(1 for t in tasks_list if isinstance(t, dict) and t.get("status") == "RUNNING")
     return {
         "active_bots": active_bots,
-        "tasks_total": len(tasks_dict),
+        "tasks_total": len(tasks_list),
         "platform_status": "operational"
     }

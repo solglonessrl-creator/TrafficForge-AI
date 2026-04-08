@@ -16,7 +16,8 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 
 from ..core.config import settings
-from ..core.storage import read_json, utc_now_iso, write_json
+from ..core.storage import utc_now_iso
+from ..core import repo
 
 
 router = APIRouter()
@@ -105,46 +106,35 @@ def _ai_generate(provider: Provider, prompt: str) -> str:
 
 
 def _posts_store() -> Dict[str, Any]:
-    data = read_json("posts", default={})
-    return data if isinstance(data, dict) else {}
+    posts = repo.list_posts()
+    return {str(p.get("id")): p for p in posts if isinstance(p, dict) and p.get("id")}
 
 
 def _topics_store() -> Dict[str, Any]:
-    data = read_json("topics", default={})
-    return data if isinstance(data, dict) else {}
+    topics = repo.list_topics_unused(limit=5000)
+    return {str(t.get("id")): t for t in topics if isinstance(t, dict) and t.get("id")}
 
 
 def _analytics_store() -> Dict[str, Any]:
-    data = read_json("analytics", default={"pageviews": {}, "referrers": {}})
-    return data if isinstance(data, dict) else {"pageviews": {}, "referrers": {}}
+    return {"pageviews": repo.get_pageviews(), "referrers": {}}
 
 
 def track_pageview(path: str, referrer: Optional[str]) -> None:
-    data = _analytics_store()
-    pageviews = data.get("pageviews") if isinstance(data.get("pageviews"), dict) else {}
-    pageviews[path] = int(pageviews.get(path, 0)) + 1
-    data["pageviews"] = pageviews
-
+    repo.increment_pageview(path)
     if referrer:
-        referrers = data.get("referrers") if isinstance(data.get("referrers"), dict) else {}
-        referrers[referrer] = int(referrers.get(referrer, 0)) + 1
-        data["referrers"] = referrers
-
-    write_json("analytics", data)
+        repo.increment_referrer(referrer)
 
 
 def list_published_posts() -> List[Dict[str, Any]]:
-    posts = _posts_store()
-    items = [p for p in posts.values() if isinstance(p, dict) and p.get("status") == "published"]
+    items = repo.list_posts(status="published")
     items.sort(key=lambda x: x.get("published_at") or "", reverse=True)
     return items
 
 
 def find_post_by_slug(slug: str) -> Optional[Dict[str, Any]]:
-    posts = _posts_store()
-    for item in posts.values():
-        if isinstance(item, dict) and item.get("slug") == slug and item.get("status") == "published":
-            return item
+    item = repo.get_post_by_slug(slug)
+    if isinstance(item, dict) and item.get("status") == "published":
+        return item
     return None
 
 
@@ -179,7 +169,7 @@ async def health():
 
 @router.post("/organic/ingest-feeds")
 async def ingest_feeds(payload: FeedIngestRequest):
-    topics = _topics_store()
+    topics_existing = {}
     created = 0
 
     async with httpx.AsyncClient(timeout=20) as client:
@@ -193,9 +183,9 @@ async def ingest_feeds(payload: FeedIngestRequest):
                     if not title:
                         continue
                     topic_id = _slugify(f"{title}-{link}")[:60]
-                    if topic_id in topics:
+                    if topic_id in topics_existing:
                         continue
-                    topics[topic_id] = {
+                    topic = {
                         "id": topic_id,
                         "title": title,
                         "link": link,
@@ -203,18 +193,15 @@ async def ingest_feeds(payload: FeedIngestRequest):
                         "created_at": utc_now_iso(),
                         "used": False,
                     }
+                    repo.upsert_topic(topic)
                     created += 1
             except Exception:
                 continue
-
-    write_json("topics", topics)
-    return {"created": created, "total_topics": len(topics)}
+    return {"created": created}
 
 
 def _pick_topic(max_candidates: int, niche: str) -> Optional[Dict[str, Any]]:
-    topics = _topics_store()
-    candidates = [t for t in topics.values() if isinstance(t, dict) and not t.get("used")]
-    candidates = candidates[: max_candidates]
+    candidates = repo.list_topics_unused(limit=max_candidates)
     if not candidates:
         return None
 
@@ -309,33 +296,28 @@ async def generate_post(payload: GeneratePostRequest):
         "content_html": article_html,
         "social_assets_raw": social_raw,
     }
-
-    posts = _posts_store()
-    posts[post_id] = post
-    write_json("posts", posts)
-
-    topics = _topics_store()
+    repo.upsert_post(post)
     topic_id = str(topic.get("id") or "")
-    if topic_id and topic_id in topics and isinstance(topics[topic_id], dict):
-        topics[topic_id]["used"] = True
-        topics[topic_id]["used_at"] = utc_now_iso()
-        topics[topic_id]["post_id"] = post_id
-        write_json("topics", topics)
+    if topic_id:
+        repo.mark_topic_used(topic_id, post_id=post_id, used_at=utc_now_iso())
 
     return {"post_id": post_id, "slug": slug, "status": "draft"}
 
 
 @router.post("/organic/publish-post")
 async def publish_post(payload: PublishRequest):
-    posts = _posts_store()
-    post = posts.get(payload.post_id)
+    post = None
+    posts = repo.list_posts()
+    for p in posts:
+        if isinstance(p, dict) and p.get("id") == payload.post_id:
+            post = p
+            break
     if not isinstance(post, dict):
         raise HTTPException(status_code=404, detail="Post no encontrado.")
 
     post["status"] = "published"
     post["published_at"] = utc_now_iso()
-    posts[payload.post_id] = post
-    write_json("posts", posts)
+    repo.upsert_post(post)
 
     return {"status": "published", "url": f"/blog/{post.get('slug')}"}
 

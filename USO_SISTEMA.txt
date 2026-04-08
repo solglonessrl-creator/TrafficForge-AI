@@ -52,7 +52,15 @@ Variables recomendadas:
 - GEMINI_API_KEY
 - LANDING_PAGE_URL
 
-6) CÓMO CAMBIAR LA LANDING / PÁGINA WEB PRINCIPAL
+6) SUPABASE (RECOMENDADO PARA PRODUCCIÓN)
+Para que los datos NO se pierdan en Railway, crea las tablas en Supabase:
+1) Supabase Dashboard -> SQL Editor
+2) Pega y ejecuta el archivo: supabase_schema.sql
+3) Verifica que existan estas tablas:
+   - tf_posts, tf_topics, tf_leads, tf_pageviews, tf_referrers, tf_automation_tasks
+Si Supabase no está disponible, el sistema usa almacenamiento local (puede resetearse en redeploy).
+
+7) CÓMO CAMBIAR LA LANDING / PÁGINA WEB PRINCIPAL
 La URL principal para CTA y botones se define en:
 LANDING_PAGE_URL=https://tu-landing.com
 
@@ -61,14 +69,13 @@ Puedes usar:
 - GitHub Pages: https://tuusuario.github.io/tu-repo/
 - Tu dominio propio: https://tudominio.com
 
-7) QUÉ OTROS TIPOS DE ENLACE PUEDES AGREGAR
+8) QUÉ OTROS TIPOS DE ENLACE PUEDES AGREGAR
 - WhatsApp: https://wa.me/NUMERO?text=MENSAJE
 - Calendly (citas): https://calendly.com/tuusuario
 - Linktree o página de links
 - Página de pago (más adelante Stripe)
 
-8) QUÉ HACER PARA QUE LOS DATOS SE REFLEJEN
+9) QUÉ HACER PARA QUE LOS DATOS SE REFLEJEN
 - Visitas: entra a / y /blog (o comparte el blog con SEO) y las visitas se acumulan.
 - Leads: usa /funnel/capture para registrar leads reales.
 - Blog: publica artículos desde /docs con el pipeline orgánico.
-
