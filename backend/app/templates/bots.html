@@ -31,20 +31,26 @@
             <div class="lg:col-span-2 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-50 flex items-center justify-between">
                     <h2 class="font-black text-slate-800">Estado</h2>
-                    <span class="text-xs font-bold text-slate-500">Demo</span>
                 </div>
                 <div class="p-6 space-y-4">
-                    {% for bot in bots %}
-                    <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
-                        <div>
-                            <p class="font-black text-slate-800">{{ bot.name }}</p>
-                            <p class="text-sm text-slate-500">{{ bot.activity }}</p>
+                    {% if bots and bots|length > 0 %}
+                        {% for bot in bots %}
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
+                            <div>
+                                <p class="font-black text-slate-800">{{ bot.name }}</p>
+                                <p class="text-sm text-slate-500">{{ bot.activity }}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black {% if bot.status == 'RUNNING' %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                                {{ bot.status }}
+                            </span>
                         </div>
-                        <span class="px-3 py-1 rounded-full text-xs font-black {% if bot.status == 'RUNNING' %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
-                            {{ bot.status }}
-                        </span>
-                    </div>
-                    {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-5 rounded-2xl bg-slate-50">
+                            <p class="font-black text-slate-800">Aún no hay bots ejecutándose.</p>
+                            <p class="text-sm text-slate-500 mt-1">Usa “Lanzar Bot” en la API para iniciar una automatización.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -67,4 +73,3 @@
     </main>
 </body>
 </html>
-

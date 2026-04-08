@@ -1,9 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from openai import OpenAI
 from groq import Groq
 from ..core.config import settings
-from .auth import get_current_user
 
 router = APIRouter()
 
@@ -39,7 +38,7 @@ def _gemini_text(result) -> str:
         return str(result).strip()
 
 @router.post("/generate-content")
-async def generate_content(request: ContentRequest, current_user: dict = Depends(get_current_user)):
+async def generate_content(request: ContentRequest):
     """
     Genera contenido optimizado para una plataforma específica usando IA.
     Solo disponible para usuarios autenticados con límites según plan SaaS.
@@ -47,10 +46,6 @@ async def generate_content(request: ContentRequest, current_user: dict = Depends
     # Verificación de llaves configuradas
     if not client_openai and not client_groq and not client_gemini:
         raise HTTPException(status_code=503, detail="Servicio de IA no configurado. Por favor añade tus API Keys en el archivo .env")
-
-    # Lógica de límites por plan SaaS
-    if current_user["plan"] == "free":
-        pass
 
     prompt = f"""
     Actúa como un experto en marketing digital y copywriter senior.
@@ -103,7 +98,7 @@ async def generate_content(request: ContentRequest, current_user: dict = Depends
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/seo-article-outline")
-async def get_article_outline(topic: str, current_user: dict = Depends(get_current_user)):
+async def get_article_outline(topic: str):
     """
     Genera una estructura de artículo SEO optimizada.
     """

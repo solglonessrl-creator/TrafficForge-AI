@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 import stripe
+import uuid
 from ..core.config import settings
+from ..core.storage import read_json, utc_now_iso, write_json
 
 router = APIRouter()
 
@@ -20,25 +22,27 @@ class CheckoutRequest(BaseModel):
 @router.post("/capture")
 async def capture_lead(lead: LeadCapture):
     """
-    Captura un nuevo lead en la base de datos de Supabase.
+    Captura un nuevo lead.
     """
     try:
-        # data = supabase.table("leads").insert({
-        #     "name": lead.name,
-        #     "email": lead.email,
-        #     "whatsapp": lead.whatsapp,
-        #     "source": lead.source,
-        #     "status": "new"
-        # }).execute()
-        
-        # Simulamos éxito por ahora
-        print(f"Lead capturado: {lead.email} desde {lead.source}")
-        
+        leads = read_json("leads", default={})
+        leads_dict = leads if isinstance(leads, dict) else {}
+        lead_id = uuid.uuid4().hex
+        leads_dict[lead_id] = {
+            "id": lead_id,
+            "name": lead.name,
+            "email": lead.email,
+            "whatsapp": lead.whatsapp,
+            "source": lead.source,
+            "created_at": utc_now_iso(),
+        }
+        write_json("leads", leads_dict)
+
         # URL de redirección a WhatsApp para el cierre de venta
         wa_message = f"Hola, vengo de TrafficForge AI y quiero más información sobre vuestros servicios."
         wa_link = f"https://wa.me/34600000000?text={wa_message.replace(' ', '%20')}"
         
-        return {"message": "Lead capturado correctamente", "whatsapp_link": wa_link}
+        return {"message": "Lead capturado correctamente", "lead_id": lead_id, "whatsapp_link": wa_link}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -105,15 +109,21 @@ async def get_stats():
     """
     Devuelve estadísticas básicas del embudo.
     """
-    # En un caso real, haríamos queries a Supabase para contar leads por fuente
-    stats = {
-        "total_leads": 125,
-        "conversions_whatsapp": 45,
-        "sales_closed": 12,
-        "sources": {
-            "tiktok": 60,
-            "instagram": 40,
-            "seo": 25
-        }
+    leads = read_json("leads", default={})
+    leads_dict = leads if isinstance(leads, dict) else {}
+    sources = {}
+    conversions_whatsapp = 0
+    for lead in leads_dict.values():
+        if not isinstance(lead, dict):
+            continue
+        source = str(lead.get("source") or "unknown")
+        sources[source] = int(sources.get(source, 0)) + 1
+        if str(lead.get("whatsapp") or "").strip():
+            conversions_whatsapp += 1
+
+    return {
+        "total_leads": len(leads_dict),
+        "conversions_whatsapp": conversions_whatsapp,
+        "sales_closed": 0,
+        "sources": sources,
     }
-    return stats

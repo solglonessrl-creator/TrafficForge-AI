@@ -1,9 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from openai import OpenAI
 from groq import Groq
 from ..core.config import settings
-from .auth import get_current_user
 
 router = APIRouter()
 
@@ -48,7 +47,7 @@ Nuestros servicios principales son:
 """
 
 @router.post("/respond")
-async def chat_with_lead(request: LeadMessage, current_user: dict = Depends(get_current_user)):
+async def chat_with_lead(request: LeadMessage):
     """
     Responde a un lead. Solo para usuarios con suscripción activa.
     """

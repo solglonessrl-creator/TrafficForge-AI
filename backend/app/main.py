@@ -1,81 +1,123 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Request
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from .core.config import settings
 from .core.scheduler import start_scheduler, stop_scheduler
-from .modules import auth, traffic, automation, chatbot, funnel, email_service, analysis, organic
+from .core.storage import read_json
+from .modules import traffic, automation, chatbot, funnel, email_service, analysis, organic
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(title=settings.PROJECT_NAME, docs_url=None, redoc_url=None)
 
 # Configuración de Jinja2
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
+
+
+@app.get("/docs", include_in_schema=False)
+async def docs():
+    response = get_swagger_ui_html(openapi_url="/openapi.json", title=f"{settings.PROJECT_NAME} - API")
+    html = response.body.decode("utf-8", errors="ignore")
+    banner = (
+        "<div style=\"padding:12px 16px;background:#0f172a;color:#fff;"
+        "font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;"
+        "display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:9999;\">"
+        "<a href=\"/\" style=\"color:#fff;text-decoration:none;font-weight:800;\">← Volver al Dashboard</a>"
+        "<a href=\"/blog\" style=\"color:#cbd5e1;text-decoration:none;font-weight:700;\">Blog</a>"
+        "<a href=\"/bots\" style=\"color:#cbd5e1;text-decoration:none;font-weight:700;\">Bots</a>"
+        "<a href=\"/leads\" style=\"color:#cbd5e1;text-decoration:none;font-weight:700;\">Leads</a>"
+        "</div>"
+    )
+    if "<body>" in html:
+        html = html.replace("<body>", f"<body>{banner}", 1)
+    return HTMLResponse(content=html)
+
+
+def _compute_stats():
+    analytics = read_json("analytics", default={"pageviews": {}, "referrers": {}})
+    pageviews = analytics.get("pageviews") if isinstance(analytics.get("pageviews"), dict) else {}
+    visitors = int(sum(int(v) for v in pageviews.values() if isinstance(v, (int, float, str)) and str(v).isdigit()))
+
+    leads = read_json("leads", default={})
+    leads_dict = leads if isinstance(leads, dict) else {}
+    leads_captured = len(leads_dict)
+
+    posts = read_json("posts", default={})
+    posts_dict = posts if isinstance(posts, dict) else {}
+    published_posts = sum(1 for p in posts_dict.values() if isinstance(p, dict) and p.get("status") == "published")
+
+    conversion_rate = "0%"
+    if visitors > 0:
+        conversion_rate = f"{(leads_captured / visitors) * 100:.1f}%"
+
+    return {
+        "visitors": visitors,
+        "leads_captured": leads_captured,
+        "conversion_rate": conversion_rate,
+        "published_posts": published_posts,
+    }
+
+def _bots_preview():
+    tasks = read_json("automation_tasks", default={})
+    tasks_dict = tasks if isinstance(tasks, dict) else {}
+    items = [t for t in tasks_dict.values() if isinstance(t, dict)]
+    items.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+    return items[:8]
+
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """
     Renderiza el Dashboard principal de TrafficForge AI.
     """
-    # Simulación de usuario autenticado para el demo
-    user = {
-        "email": "demo@trafficforge.ai",
-        "plan": "free"
-    }
-    stats = {
-        "visitors": 1500,
-        "leads_captured": 120,
-        "conversion_rate": "8%",
-        "active_campaigns": 3,
-        "roi_estimate": "250%"
-    }
+    stats = _compute_stats()
     template = templates.env.get_template("dashboard.html")
-    html = template.render(request=request, stats=stats, user=user, landing_url=settings.LANDING_PAGE_URL)
+    html = template.render(
+        request=request,
+        stats=stats,
+        bots=_bots_preview(),
+        landing_url=settings.LANDING_PAGE_URL,
+    )
     return HTMLResponse(content=html)
 
 @app.get("/bots", response_class=HTMLResponse, include_in_schema=False)
 async def bots_page(request: Request):
-    user = {
-        "email": "demo@trafficforge.ai",
-        "plan": "free"
-    }
-    bots = [
-        {"name": "IG Growth Bot #1", "status": "RUNNING", "activity": "Posteando en Reels..."},
-        {"name": "TikTok Lead Gen", "status": "RUNNING", "activity": "Respondiendo DMs..."},
-        {"name": "SEO Publisher", "status": "IDLE", "activity": "Esperando siguiente ejecución..."},
-    ]
+    tasks = read_json("automation_tasks", default={})
+    tasks_dict = tasks if isinstance(tasks, dict) else {}
+    bots = list(tasks_dict.values())
     template = templates.env.get_template("bots.html")
-    html = template.render(request=request, user=user, bots=bots, landing_url=settings.LANDING_PAGE_URL)
+    html = template.render(request=request, bots=bots, landing_url=settings.LANDING_PAGE_URL)
     return HTMLResponse(content=html)
 
 @app.get("/leads", response_class=HTMLResponse, include_in_schema=False)
 async def leads_page(request: Request):
-    user = {
-        "email": "demo@trafficforge.ai",
-        "plan": "free"
-    }
+    leads = read_json("leads", default={})
+    leads_dict = leads if isinstance(leads, dict) else {}
+    sources = {}
+    conversions_whatsapp = 0
+    for lead in leads_dict.values():
+        if not isinstance(lead, dict):
+            continue
+        source = str(lead.get("source") or "unknown")
+        sources[source] = int(sources.get(source, 0)) + 1
+        if str(lead.get("whatsapp") or "").strip():
+            conversions_whatsapp += 1
+
     stats = {
-        "total_leads": 125,
-        "conversions_whatsapp": 45,
-        "sales_closed": 12,
-        "sources": {
-            "tiktok": 60,
-            "instagram": 40,
-            "seo": 25
-        }
+        "total_leads": len(leads_dict),
+        "conversions_whatsapp": conversions_whatsapp,
+        "sales_closed": 0,
+        "sources": sources,
     }
     template = templates.env.get_template("leads.html")
-    html = template.render(request=request, user=user, stats=stats, landing_url=settings.LANDING_PAGE_URL)
+    html = template.render(request=request, stats=stats, landing_url=settings.LANDING_PAGE_URL)
     return HTMLResponse(content=html)
 
 @app.get("/subscription", response_class=HTMLResponse, include_in_schema=False)
 async def subscription_page(request: Request):
-    user = {
-        "email": "demo@trafficforge.ai",
-        "plan": "free"
-    }
     template = templates.env.get_template("subscription.html")
-    html = template.render(request=request, user=user, landing_url=settings.LANDING_PAGE_URL)
+    html = template.render(request=request, landing_url=settings.LANDING_PAGE_URL)
     return HTMLResponse(content=html)
 
 @app.middleware("http")
@@ -96,7 +138,6 @@ async def on_shutdown():
     stop_scheduler()
 
 # Incluir routers
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(traffic.router, prefix="/traffic", tags=["Traffic"])
 app.include_router(automation.router, prefix="/automation", tags=["Automation"])
 app.include_router(chatbot.router, prefix="/chatbot", tags=["Chatbot"])

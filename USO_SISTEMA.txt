@@ -1,0 +1,74 @@
+TRAFFICFORGE AI PUBLICIDAD 24/7 - GUÍA DE USO (SIN LOGIN / SIN PAGOS)
+
+1) URLS PRINCIPALES
+- Dashboard: /
+- Bots: /bots
+- Leads: /leads
+- Blog (SEO): /blog
+- API (Swagger): /docs
+- Sitemap: /sitemap.xml
+- Robots: /robots.txt
+
+2) CÓMO SE GENERA EL TRÁFICO ORGÁNICO (SIN SPAM)
+El tráfico llega por SEO:
+- El sistema publica artículos en /blog
+- Google indexa usando /sitemap.xml y /robots.txt
+- Cada artículo incluye un CTA con tu LANDING_PAGE_URL
+
+3) PRIMEROS PASOS PARA QUE EMPIECE A “CONTAR” Y ATRAER TRÁFICO
+A) Conteo de visitas (visitors)
+- Se incrementa automáticamente cuando alguien visita:
+  - /
+  - /blog
+  - /blog/{slug}
+
+B) Leads (leads_captured)
+- Se incrementa cuando capturas un lead vía API:
+  - POST /funnel/capture
+  - Luego se refleja en:
+    - Dashboard (Leads Nuevos)
+    - /leads (Resumen)
+
+C) Publicar artículos (published_posts)
+Para publicar tu primer artículo:
+1) POST /organic/ingest-feeds
+2) POST /organic/generate-post
+3) POST /organic/publish-post
+Luego revisa /blog y /sitemap.xml
+
+4) BOTS (AUTOMATIZACIÓN)
+Para lanzar un bot de navegación (Playwright) desde API:
+- POST /automation/run-automation
+Eso crea una tarea y se refleja en /bots.
+
+5) CONFIGURACIÓN (ENV)
+Estas variables se configuran:
+- Local: archivo .env
+- Producción (Railway): Variables del servicio
+
+Variables recomendadas:
+- SUPABASE_URL
+- SUPABASE_KEY
+- GEMINI_API_KEY
+- LANDING_PAGE_URL
+
+6) CÓMO CAMBIAR LA LANDING / PÁGINA WEB PRINCIPAL
+La URL principal para CTA y botones se define en:
+LANDING_PAGE_URL=https://tu-landing.com
+
+Puedes usar:
+- Netlify: https://tusitio.netlify.app
+- GitHub Pages: https://tuusuario.github.io/tu-repo/
+- Tu dominio propio: https://tudominio.com
+
+7) QUÉ OTROS TIPOS DE ENLACE PUEDES AGREGAR
+- WhatsApp: https://wa.me/NUMERO?text=MENSAJE
+- Calendly (citas): https://calendly.com/tuusuario
+- Linktree o página de links
+- Página de pago (más adelante Stripe)
+
+8) QUÉ HACER PARA QUE LOS DATOS SE REFLEJEN
+- Visitas: entra a / y /blog (o comparte el blog con SEO) y las visitas se acumulan.
+- Leads: usa /funnel/capture para registrar leads reales.
+- Blog: publica artículos desde /docs con el pipeline orgánico.
+
