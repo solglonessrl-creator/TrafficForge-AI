@@ -344,7 +344,7 @@ async def run_daily_pipeline() -> None:
     topics = _topics_store()
     if len(topics) < 10:
         try:
-            await ingest_feeds(FeedIngestRequest(), current_user={"plan": "pro"})
+            await ingest_feeds(FeedIngestRequest())
         except Exception:
             return
 
@@ -359,10 +359,16 @@ async def run_daily_pipeline() -> None:
     if already:
         return
 
-    generated = await generate_post(GeneratePostRequest(provider="gemini"), current_user={"plan": "pro"})
+    generated = await generate_post(GeneratePostRequest(provider="gemini"))
     post_id = generated.get("post_id")
     if post_id:
-        await publish_post(PublishRequest(post_id=post_id), current_user={"plan": "pro"})
+        await publish_post(PublishRequest(post_id=post_id))
+
+
+@router.post("/organic/run-now")
+async def run_now():
+    await run_daily_pipeline()
+    return {"status": "ok"}
 
 
 @router.get("/blog", response_class=HTMLResponse, include_in_schema=False)

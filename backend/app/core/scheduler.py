@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Awaitable, Callable, Optional
+from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -17,7 +18,7 @@ def start_scheduler(daily_job: Callable[[], Awaitable[None]]) -> AsyncIOSchedule
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         daily_job,
-        CronTrigger(hour=9, minute=0),
+        CronTrigger(hour=9, minute=0, timezone=ZoneInfo("UTC")),
         id="trafficforge_daily_pipeline",
         replace_existing=True,
         max_instances=1,
@@ -35,4 +36,3 @@ def stop_scheduler() -> None:
         return
     _scheduler.shutdown(wait=False)
     _scheduler = None
-
