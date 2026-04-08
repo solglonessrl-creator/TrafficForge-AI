@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leads - TrafficForge AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <main class="max-w-5xl mx-auto px-6 py-10">
+        <header class="flex items-center justify-between mb-10">
+            <div>
+                <a href="/" class="inline-flex items-center text-indigo-600 font-bold">
+                    <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+                </a>
+                <h1 class="text-3xl font-black mt-4">Leads</h1>
+                <p class="text-slate-600 mt-2">Visualiza y captura leads desde el embudo.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="/docs#/Funnel" class="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold hover:bg-slate-100">
+                    API Funnel
+                </a>
+                <a href="/docs#/Funnel/capture_lead_funnel_capture_post" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-black hover:bg-indigo-700">
+                    <i class="fas fa-user-plus mr-2"></i> Capturar Lead
+                </a>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+                <h2 class="font-black text-slate-800">Resumen</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div class="p-5 rounded-2xl bg-slate-50">
+                        <p class="text-xs uppercase font-black text-slate-500">Total Leads</p>
+                        <p class="text-2xl font-black mt-2">{{ stats.total_leads }}</p>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-slate-50">
+                        <p class="text-xs uppercase font-black text-slate-500">WhatsApp</p>
+                        <p class="text-2xl font-black mt-2">{{ stats.conversions_whatsapp }}</p>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-slate-50">
+                        <p class="text-xs uppercase font-black text-slate-500">Ventas</p>
+                        <p class="text-2xl font-black mt-2">{{ stats.sales_closed }}</p>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="font-black text-slate-800">Fuentes</h3>
+                    <div class="mt-4 space-y-3">
+                        {% for k, v in stats.sources.items() %}
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
+                            <span class="font-bold text-slate-700">{{ k }}</span>
+                            <span class="font-black text-slate-900">{{ v }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+                <h2 class="font-black text-slate-800">Acciones rápidas</h2>
+                <p class="text-sm text-slate-500 mt-2">Navegación clara para que siempre puedas volver al panel.</p>
+                <div class="mt-6 space-y-3">
+                    <a href="{{ landing_url }}" target="_blank" rel="noopener noreferrer" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800">
+                        Ir a Landing
+                    </a>
+                    <a href="/blog" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white border border-slate-200 font-black hover:bg-slate-100">
+                        Ver Blog (SEO)
+                    </a>
+                    <a href="/" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-indigo-600 text-white font-black hover:bg-indigo-700">
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+

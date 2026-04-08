@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suscripción - TrafficForge AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <main class="max-w-4xl mx-auto px-6 py-10">
+        <header class="mb-10">
+            <a href="/" class="inline-flex items-center text-indigo-600 font-bold">
+                <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+            </a>
+            <h1 class="text-3xl font-black mt-4">Suscripción</h1>
+            <p class="text-slate-600 mt-2">Administra tu plan y mejora cuando quieras.</p>
+        </header>
+
+        <section class="bg-white border border-slate-100 rounded-2xl shadow-sm p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs uppercase font-black text-slate-500">Plan actual</p>
+                    <p class="text-2xl font-black mt-2">{{ user.plan | upper }}</p>
+                    <p class="text-sm text-slate-500 mt-2">La compra/Stripe se integra cuando confirmemos que todo está funcionando a nivel profesional.</p>
+                </div>
+                <a href="{{ landing_url }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-black hover:bg-indigo-700">
+                    Mejorar plan
+                </a>
+            </div>
+
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-5 rounded-2xl bg-slate-50">
+                    <p class="text-xs uppercase font-black text-slate-500">Contenido SEO</p>
+                    <p class="text-sm text-slate-700 mt-2">Generación y publicación automática (PRO).</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-slate-50">
+                    <p class="text-xs uppercase font-black text-slate-500">Automatización</p>
+                    <p class="text-sm text-slate-700 mt-2">Bots y multi-cuenta (PRO).</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-slate-50">
+                    <p class="text-xs uppercase font-black text-slate-500">Chatbot</p>
+                    <p class="text-sm text-slate-700 mt-2">Respuestas inteligentes a leads.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - TrafficForge AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <main class="max-w-4xl mx-auto px-6 py-12">
+        <header class="mb-10">
+            <a href="/" class="text-indigo-600 font-bold">← Volver al panel</a>
+            <h1 class="text-4xl font-black mt-4">Blog</h1>
+            <p class="text-slate-600 mt-2">Contenido educativo para atraer tráfico orgánico y convertir sin spam.</p>
+        </header>
+
+        <section class="space-y-6">
+            {% if posts and posts|length > 0 %}
+                {% for post in posts %}
+                    <article class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                        <h2 class="text-2xl font-extrabold">
+                            <a class="hover:text-indigo-600" href="/blog/{{ post.slug }}">{{ post.title }}</a>
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-2">Publicado: {{ post.published_at }}</p>
+                        <div class="mt-4">
+                            <a href="/blog/{{ post.slug }}" class="inline-flex items-center px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700">
+                                Leer artículo
+                            </a>
+                        </div>
+                    </article>
+                {% endfor %}
+            {% else %}
+                <div class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+                    <p class="text-slate-700 font-medium">Aún no hay artículos publicados.</p>
+                    <p class="text-slate-500 mt-2">Genera y publica desde el módulo orgánico para comenzar a posicionar en Google.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>
+

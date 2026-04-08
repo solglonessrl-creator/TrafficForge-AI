@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Bots - TrafficForge AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <main class="max-w-5xl mx-auto px-6 py-10">
+        <header class="flex items-center justify-between mb-10">
+            <div>
+                <a href="/" class="inline-flex items-center text-indigo-600 font-bold">
+                    <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+                </a>
+                <h1 class="text-3xl font-black mt-4">Mis Bots</h1>
+                <p class="text-slate-600 mt-2">Gestiona tus automatizaciones sin salir del panel.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="/docs#/Automation" class="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold hover:bg-slate-100">
+                    API Automation
+                </a>
+                <a href="/docs#/Automation/run_automation_automation_run_automation_post" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-black hover:bg-indigo-700">
+                    <i class="fas fa-plus mr-2"></i> Lanzar Bot
+                </a>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between">
+                    <h2 class="font-black text-slate-800">Estado</h2>
+                    <span class="text-xs font-bold text-slate-500">Demo</span>
+                </div>
+                <div class="p-6 space-y-4">
+                    {% for bot in bots %}
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
+                        <div>
+                            <p class="font-black text-slate-800">{{ bot.name }}</p>
+                            <p class="text-sm text-slate-500">{{ bot.activity }}</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-black {% if bot.status == 'RUNNING' %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                            {{ bot.status }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+                <h2 class="font-black text-slate-800">Acciones rápidas</h2>
+                <p class="text-sm text-slate-500 mt-2">Para operar sin confusión, todas las acciones te devuelven al panel.</p>
+                <div class="mt-6 space-y-3">
+                    <a href="/docs#/Automation/status_automation_status_get" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800">
+                        Ver Status en API
+                    </a>
+                    <a href="/blog" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white border border-slate-200 font-black hover:bg-slate-100">
+                        Ver Blog (SEO)
+                    </a>
+                    <a href="/" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-indigo-600 text-white font-black hover:bg-indigo-700">
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+
