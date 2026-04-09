@@ -77,11 +77,21 @@ def _ai_generate(provider: Provider, prompt: str) -> str:
     if provider == "gemini":
         if not client_gemini:
             raise HTTPException(status_code=400, detail="Gemini no está configurado.")
-        result = client_gemini.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-        )
-        return _gemini_text(result)
+        last_error: Optional[str] = None
+        for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            try:
+                result = client_gemini.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                )
+                text = _gemini_text(result)
+                if text:
+                    return text
+                last_error = "Respuesta vacía del modelo"
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {str(e)[:300]}"
+                continue
+        raise HTTPException(status_code=502, detail=f"Error usando Gemini. {last_error or ''}".strip())
 
     if provider == "groq":
         if not client_groq:
@@ -159,10 +169,19 @@ async def health():
     posts = _posts_store()
     topics = _topics_store()
     analytics = _analytics_store()
+    pageviews = analytics.get("pageviews") if isinstance(analytics, dict) else {}
+    pageviews = pageviews if isinstance(pageviews, dict) else {}
+    total_views = sum(int(v) for v in pageviews.values() if isinstance(v, (int, float, str)) and str(v).isdigit())
     return {
         "posts": len(posts),
         "topics": len(topics),
-        "pageviews": len((analytics.get("pageviews") or {})),
+        "pageviews_paths": len(pageviews),
+        "pageviews_total": total_views,
+        "ai_configured": {
+            "gemini": bool(settings.GEMINI_API_KEY),
+            "groq": bool(settings.GROQ_API_KEY),
+            "openai": bool(settings.OPENAI_API_KEY),
+        },
         "status": "ok",
     }
 
@@ -349,8 +368,13 @@ async def run_daily_pipeline() -> None:
 
 @router.post("/organic/run-now")
 async def run_now():
-    await run_daily_pipeline()
-    return {"status": "ok"}
+    try:
+        await run_daily_pipeline()
+        return {"status": "ok"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)[:500]}")
 
 
 @router.get("/blog", response_class=HTMLResponse, include_in_schema=False)
