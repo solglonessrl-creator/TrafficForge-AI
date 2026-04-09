@@ -393,6 +393,10 @@ async def publish_post(payload: PublishRequest):
 
 
 async def run_daily_pipeline() -> None:
+    await _run_daily_pipeline_with_fallback(provider_preference="gemini")
+
+
+async def _run_daily_pipeline_with_fallback(provider_preference: Provider) -> None:
     topics = _topics_store()
     if len(topics) < 10:
         try:
@@ -411,17 +415,41 @@ async def run_daily_pipeline() -> None:
     if already:
         return
 
-    generated = await generate_post(GeneratePostRequest(provider="gemini"))
-    post_id = generated.get("post_id")
-    if post_id:
-        await publish_post(PublishRequest(post_id=post_id))
+    providers: List[Provider] = [provider_preference]
+    for p in ["gemini", "groq", "openai"]:
+        if p not in providers:
+            providers.append(p)  # type: ignore[arg-type]
+
+    last_error: Optional[str] = None
+    for provider in providers:
+        try:
+            if provider == "gemini" and not settings.GEMINI_API_KEY:
+                continue
+            if provider == "groq" and not settings.GROQ_API_KEY:
+                continue
+            if provider == "openai" and not settings.OPENAI_API_KEY:
+                continue
+
+            generated = await generate_post(GeneratePostRequest(provider=provider))
+            post_id = generated.get("post_id")
+            if post_id:
+                await publish_post(PublishRequest(post_id=post_id))
+            return
+        except HTTPException as e:
+            last_error = str(e.detail)
+            continue
+        except Exception as e:
+            last_error = f"{type(e).__name__}: {str(e)[:300]}"
+            continue
+
+    raise HTTPException(status_code=502, detail=f"No se pudo generar el post con ningún proveedor. {last_error or ''}".strip())
 
 
 @router.post("/organic/run-now")
-async def run_now():
+async def run_now(provider: Provider = "gemini"):
     try:
-        await run_daily_pipeline()
-        return {"status": "ok"}
+        await _run_daily_pipeline_with_fallback(provider_preference=provider)
+        return {"status": "ok", "provider_used_preference": provider}
     except HTTPException:
         raise
     except Exception as e:
