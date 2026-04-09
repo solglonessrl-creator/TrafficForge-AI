@@ -37,6 +37,34 @@ def _gemini_text(result) -> str:
     except Exception:
         return str(result).strip()
 
+
+def _list_gemini_models(client) -> list[str]:
+    try:
+        res = client.models.list()
+    except Exception:
+        return []
+    names: list[str] = []
+    try:
+        for m in res:
+            name = getattr(m, "name", None) or getattr(m, "model", None)
+            if isinstance(name, str) and name:
+                if name.startswith("models/"):
+                    name = name.split("/", 1)[1]
+                names.append(name)
+    except Exception:
+        return []
+    return names
+
+
+def _pick_gemini_model(client) -> str:
+    preferred = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"]
+    available = _list_gemini_models(client)
+    available_set = set(available)
+    for m in preferred:
+        if m in available_set:
+            return m
+    return available[0] if available else "gemini-2.0-flash"
+
 # Script base de ventas
 SALES_CONTEXT = """
 Eres un asistente experto en ventas para TrafficForge AI.
@@ -67,8 +95,9 @@ async def chat_with_lead(request: LeadMessage):
         elif request.provider == "gemini":
             if not client_gemini:
                 raise HTTPException(status_code=400, detail="Gemini no está configurado.")
+            model_name = _pick_gemini_model(client_gemini)
             response = client_gemini.models.generate_content(
-                model="gemini-2.0-flash",
+                model=model_name,
                 contents=f"{SALES_CONTEXT}\n\nLead dice: {request.message}",
             )
             ai_response = _gemini_text(response)

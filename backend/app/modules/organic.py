@@ -71,6 +71,36 @@ def _gemini_text(result) -> str:
         return str(result).strip()
 
 
+def _list_gemini_models(client: Any) -> List[str]:
+    try:
+        res = client.models.list()
+    except Exception:
+        return []
+    names: List[str] = []
+    try:
+        for m in res:
+            name = getattr(m, "name", None) or getattr(m, "model", None)
+            if isinstance(name, str) and name:
+                if name.startswith("models/"):
+                    name = name.split("/", 1)[1]
+                names.append(name)
+    except Exception:
+        return []
+    return names
+
+
+def _pick_gemini_models(client: Any) -> List[str]:
+    preferred = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"]
+    available = _list_gemini_models(client)
+    available_set = set(available)
+    candidates = [m for m in preferred if m in available_set]
+    if candidates:
+        return candidates
+    if available:
+        return available[:3]
+    return preferred[:1]
+
+
 def _ai_generate(provider: Provider, prompt: str) -> str:
     client_openai, client_groq, client_gemini = _get_ai_clients()
 
@@ -78,7 +108,7 @@ def _ai_generate(provider: Provider, prompt: str) -> str:
         if not client_gemini:
             raise HTTPException(status_code=400, detail="Gemini no está configurado.")
         last_error: Optional[str] = None
-        for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+        for model_name in _pick_gemini_models(client_gemini):
             try:
                 result = client_gemini.models.generate_content(
                     model=model_name,
