@@ -15,7 +15,7 @@ from groq import Groq
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-from ..core.config import settings
+from ..core.config import has_real_secret, settings
 from ..core.storage import utc_now_iso
 from ..core import repo
 
@@ -51,11 +51,11 @@ def _slugify(text: str) -> str:
 
 
 def _get_ai_clients() -> Tuple[Optional[OpenAI], Optional[Groq], Optional[Any]]:
-    client_openai = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
-    client_groq = Groq(api_key=settings.GROQ_API_KEY) if settings.GROQ_API_KEY else None
+    client_openai = OpenAI(api_key=settings.OPENAI_API_KEY) if has_real_secret(settings.OPENAI_API_KEY) else None
+    client_groq = Groq(api_key=settings.GROQ_API_KEY) if has_real_secret(settings.GROQ_API_KEY) else None
     client_gemini = (
         google_genai.Client(api_key=settings.GEMINI_API_KEY)
-        if settings.GEMINI_API_KEY and google_genai
+        if has_real_secret(settings.GEMINI_API_KEY) and google_genai
         else None
     )
     return client_openai, client_groq, client_gemini
@@ -217,9 +217,9 @@ async def health():
         "pageviews_paths": len(pageviews),
         "pageviews_total": total_views,
         "ai_configured": {
-            "gemini": bool(settings.GEMINI_API_KEY),
-            "groq": bool(settings.GROQ_API_KEY),
-            "openai": bool(settings.OPENAI_API_KEY),
+            "gemini": has_real_secret(settings.GEMINI_API_KEY),
+            "groq": has_real_secret(settings.GROQ_API_KEY),
+            "openai": has_real_secret(settings.OPENAI_API_KEY),
         },
         "status": "ok",
     }
@@ -423,11 +423,11 @@ async def _run_daily_pipeline_with_fallback(provider_preference: Provider) -> No
     last_error: Optional[str] = None
     for provider in providers:
         try:
-            if provider == "gemini" and not settings.GEMINI_API_KEY:
+            if provider == "gemini" and not has_real_secret(settings.GEMINI_API_KEY):
                 continue
-            if provider == "groq" and not settings.GROQ_API_KEY:
+            if provider == "groq" and not has_real_secret(settings.GROQ_API_KEY):
                 continue
-            if provider == "openai" and not settings.OPENAI_API_KEY:
+            if provider == "openai" and not has_real_secret(settings.OPENAI_API_KEY):
                 continue
 
             generated = await generate_post(GeneratePostRequest(provider=provider))

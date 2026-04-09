@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from openai import OpenAI
 from groq import Groq
-from ..core.config import settings
+from ..core.config import has_real_secret, settings
 
 router = APIRouter()
 
@@ -18,12 +18,12 @@ class LeadMessage(BaseModel):
     channel: str # "whatsapp", "dm_instagram", "email"
     provider: str = "openai" # "openai", "groq", "gemini"
 
-client_openai = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
-client_groq = Groq(api_key=settings.GROQ_API_KEY) if settings.GROQ_API_KEY else None
+client_openai = OpenAI(api_key=settings.OPENAI_API_KEY) if has_real_secret(settings.OPENAI_API_KEY) else None
+client_groq = Groq(api_key=settings.GROQ_API_KEY) if has_real_secret(settings.GROQ_API_KEY) else None
 
 client_gemini = (
     google_genai.Client(api_key=settings.GEMINI_API_KEY)
-    if settings.GEMINI_API_KEY and google_genai
+    if has_real_secret(settings.GEMINI_API_KEY) and google_genai
     else None
 )
 
