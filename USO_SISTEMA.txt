@@ -21,6 +21,7 @@ A) Conteo de visitas (visitors)
   - /
   - /blog
   - /blog/{slug}
+Nota: En el Dashboard ahora se muestran las visitas DEL DÍA (UTC).
 
 B) Leads (leads_captured)
 - Se incrementa cuando capturas un lead vía API:
@@ -57,7 +58,7 @@ Para que los datos NO se pierdan en Railway, crea las tablas en Supabase:
 1) Supabase Dashboard -> SQL Editor
 2) Pega y ejecuta el archivo: supabase_schema.sql
 3) Verifica que existan estas tablas:
-   - tf_posts, tf_topics, tf_leads, tf_pageviews, tf_referrers, tf_automation_tasks
+   - tf_posts, tf_topics, tf_leads, tf_pageviews, tf_pageviews_daily, tf_referrers, tf_automation_tasks
 Si Supabase no está disponible, el sistema usa almacenamiento local (puede resetearse en redeploy).
 
 7) CÓMO CAMBIAR LA LANDING / PÁGINA WEB PRINCIPAL

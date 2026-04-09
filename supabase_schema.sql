@@ -55,8 +55,14 @@ create table if not exists tf_pageviews (
   count bigint not null default 0
 );
 
+create table if not exists tf_pageviews_daily (
+  date date not null,
+  path text not null,
+  count bigint not null default 0,
+  primary key (date, path)
+);
+
 create table if not exists tf_referrers (
   referrer text primary key,
   count bigint not null default 0
 );
-

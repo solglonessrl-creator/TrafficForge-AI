@@ -126,7 +126,7 @@ def _topics_store() -> Dict[str, Any]:
 
 
 def _analytics_store() -> Dict[str, Any]:
-    return {"pageviews": repo.get_pageviews(), "referrers": {}}
+    return {"pageviews": repo.get_pageviews_total(), "referrers": {}}
 
 
 def track_pageview(path: str, referrer: Optional[str]) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from .database import supabase
 from .storage import read_json, write_json
@@ -17,7 +18,11 @@ def _safe_int(value: Any) -> int:
         return 0
 
 
-def get_pageviews() -> Dict[str, int]:
+def _utc_date_key() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def get_pageviews_total() -> Dict[str, int]:
     if _supabase_available():
         try:
             res = supabase.table("tf_pageviews").select("path,count").execute()
@@ -30,13 +35,41 @@ def get_pageviews() -> Dict[str, int]:
     return {str(k): _safe_int(v) for k, v in pageviews.items()}
 
 
+def get_pageviews_today() -> Dict[str, int]:
+    date_key = _utc_date_key()
+    if _supabase_available():
+        try:
+            res = supabase.table("tf_pageviews_daily").select("path,count").eq("date", date_key).execute()
+            rows = getattr(res, "data", None) or []
+            return {str(r.get("path")): _safe_int(r.get("count")) for r in rows if isinstance(r, dict) and r.get("path")}
+        except Exception:
+            pass
+    data = read_json("analytics_daily", default={})
+    day = data.get(date_key) if isinstance(data, dict) and isinstance(data.get(date_key), dict) else {}
+    return {str(k): _safe_int(v) for k, v in day.items()}
+
+
 def increment_pageview(path: str) -> None:
+    date_key = _utc_date_key()
     if _supabase_available():
         try:
             res = supabase.table("tf_pageviews").select("count").eq("path", path).execute()
             rows = getattr(res, "data", None) or []
             current = _safe_int(rows[0].get("count")) if rows else 0
             supabase.table("tf_pageviews").upsert({"path": path, "count": current + 1}).execute()
+        except Exception:
+            pass
+        try:
+            res = (
+                supabase.table("tf_pageviews_daily")
+                .select("count")
+                .eq("date", date_key)
+                .eq("path", path)
+                .execute()
+            )
+            rows = getattr(res, "data", None) or []
+            current = _safe_int(rows[0].get("count")) if rows else 0
+            supabase.table("tf_pageviews_daily").upsert({"date": date_key, "path": path, "count": current + 1}).execute()
             return
         except Exception:
             pass
@@ -47,6 +80,14 @@ def increment_pageview(path: str) -> None:
     pageviews[path] = _safe_int(pageviews.get(path)) + 1
     data["pageviews"] = pageviews
     write_json("analytics", data)
+
+    daily = read_json("analytics_daily", default={})
+    if not isinstance(daily, dict):
+        daily = {}
+    day = daily.get(date_key) if isinstance(daily.get(date_key), dict) else {}
+    day[path] = _safe_int(day.get(path)) + 1
+    daily[date_key] = day
+    write_json("analytics_daily", daily)
 
 
 def increment_referrer(referrer: str) -> None:
@@ -226,4 +267,3 @@ def upsert_task(task: Dict[str, Any]) -> None:
     if task_id:
         tasks_dict[task_id] = task
         write_json("automation_tasks", tasks_dict)
-

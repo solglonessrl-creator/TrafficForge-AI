@@ -2,8 +2,10 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from datetime import datetime, timezone
 from .core.config import settings
 from .core.scheduler import start_scheduler, stop_scheduler
 from .core import repo
@@ -35,8 +37,8 @@ async def docs():
 
 
 def _compute_stats():
-    pageviews = repo.get_pageviews()
-    visitors = int(sum(int(v) for v in pageviews.values()))
+    pageviews_today = repo.get_pageviews_today()
+    visitors = int(sum(int(v) for v in pageviews_today.values()))
 
     leads_captured = len(repo.list_leads())
 
@@ -52,6 +54,25 @@ def _compute_stats():
         "conversion_rate": conversion_rate,
         "published_posts": published_posts,
     }
+
+
+def _format_today_es() -> str:
+    now = datetime.now(timezone.utc)
+    months = [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+    ]
+    return f"{now.day:02d} de {months[now.month - 1]}, {now.year}"
 
 def _bots_preview():
     return repo.list_tasks(limit=8)
@@ -69,8 +90,17 @@ async def root(request: Request):
         stats=stats,
         bots=_bots_preview(),
         landing_url=settings.LANDING_PAGE_URL,
+        today_label=_format_today_es(),
     )
     return HTMLResponse(content=html)
+
+
+@app.get("/api/dashboard", include_in_schema=False)
+async def dashboard_api():
+    stats = _compute_stats()
+    now = datetime.now(timezone.utc).strftime("%H:%M UTC")
+    bots = _bots_preview()
+    return JSONResponse({"stats": stats, "bots": bots, "now": now, "today": _format_today_es()})
 
 @app.get("/bots", response_class=HTMLResponse, include_in_schema=False)
 async def bots_page(request: Request):
