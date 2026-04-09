@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GROQ_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: Optional[str] = None
     STRIPE_API_KEY: Optional[str] = None
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
     SENDGRID_API_KEY: Optional[str] = None

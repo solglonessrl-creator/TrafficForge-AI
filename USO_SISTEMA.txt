@@ -51,6 +51,7 @@ Variables recomendadas:
 - SUPABASE_URL
 - SUPABASE_KEY
 - GEMINI_API_KEY
+- GEMINI_MODEL (opcional, si tu cuenta no soporta gemini-2.0)
 - LANDING_PAGE_URL
 
 6) SUPABASE (RECOMENDADO PARA PRODUCCIÓN)

@@ -90,7 +90,16 @@ def _list_gemini_models(client: Any) -> List[str]:
 
 
 def _pick_gemini_models(client: Any) -> List[str]:
-    preferred = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"]
+    if settings.GEMINI_MODEL:
+        return [settings.GEMINI_MODEL]
+    preferred = [
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.0-pro",
+        "gemini-pro",
+    ]
     available = _list_gemini_models(client)
     available_set = set(available)
     candidates = [m for m in preferred if m in available_set]
@@ -213,6 +222,18 @@ async def health():
             "openai": bool(settings.OPENAI_API_KEY),
         },
         "status": "ok",
+    }
+
+@router.get("/organic/models")
+async def gemini_models():
+    _, _, client_gemini = _get_ai_clients()
+    if not client_gemini:
+        return {"gemini_configured": False, "models": []}
+    available = _list_gemini_models(client_gemini)
+    return {
+        "gemini_configured": True,
+        "preferred": _pick_gemini_models(client_gemini),
+        "models": available,
     }
 
 
