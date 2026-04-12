@@ -57,9 +57,10 @@ def _list_gemini_models(client) -> list[str]:
 
 
 def _pick_gemini_model(client) -> str:
-    if settings.GEMINI_MODEL:
-        return settings.GEMINI_MODEL
-    preferred = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.0-pro", "gemini-pro"]
+    forced = settings.GEMINI_MODEL or getattr(settings, "GEMINI_MODELO", None)
+    if forced:
+        return forced
+    preferred = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-2.0-flash-001", "gemini-pro-latest"]
     available = _list_gemini_models(client)
     available_set = set(available)
     for m in preferred:
