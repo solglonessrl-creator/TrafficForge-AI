@@ -39,6 +39,22 @@ DEFAULT_FEEDS = [
 ]
 
 
+def _strip_html_to_text(html: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", html or "")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _meta_description_from_html(html: str, limit: int = 160) -> str:
+    text = _strip_html_to_text(html)
+    if len(text) <= limit:
+        return text
+    cut = text[: limit + 1]
+    if " " in cut:
+        cut = cut.rsplit(" ", 1)[0]
+    return cut.strip()
+
+
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -461,7 +477,15 @@ async def blog_index(request: Request):
     posts = list_published_posts()
     track_pageview("/blog", request.headers.get("referer"))
     template = templates.env.get_template("blog_index.html")
-    html = template.render(request=request, posts=posts)
+    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    html = template.render(
+        request=request,
+        posts=posts,
+        google_site_verification=settings.GOOGLE_SITE_VERIFICATION,
+        canonical_url=f"{base}/blog",
+        og_url=f"{base}/blog",
+        meta_description="Contenido educativo para atraer tráfico orgánico y convertir sin spam.",
+    )
     return HTMLResponse(content=html)
 
 
@@ -472,7 +496,16 @@ async def blog_post(slug: str, request: Request):
         raise HTTPException(status_code=404, detail="Artículo no encontrado.")
     track_pageview(f"/blog/{slug}", request.headers.get("referer"))
     template = templates.env.get_template("blog_post.html")
-    html = template.render(request=request, post=post)
+    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    canonical = f"{base}/blog/{slug}"
+    html = template.render(
+        request=request,
+        post=post,
+        google_site_verification=settings.GOOGLE_SITE_VERIFICATION,
+        canonical_url=canonical,
+        og_url=canonical,
+        meta_description=_meta_description_from_html(str(post.get("content_html") or "")),
+    )
     return HTMLResponse(content=html)
 
 

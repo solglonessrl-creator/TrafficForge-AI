@@ -100,6 +100,8 @@ async def root(request: Request):
         bots=_bots_preview(),
         landing_url=settings.LANDING_PAGE_URL,
         today_label=_format_today_es(),
+        google_site_verification=settings.GOOGLE_SITE_VERIFICATION,
+        canonical_url=(settings.PUBLIC_BASE_URL.rstrip("/") + "/") if settings.PUBLIC_BASE_URL else str(request.base_url),
     )
     return HTMLResponse(content=html)
 
@@ -115,7 +117,14 @@ async def dashboard_api():
 async def bots_page(request: Request):
     bots = repo.list_tasks(limit=200)
     template = templates.env.get_template("bots.html")
-    html = template.render(request=request, bots=bots, landing_url=settings.LANDING_PAGE_URL)
+    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    html = template.render(
+        request=request,
+        bots=bots,
+        landing_url=settings.LANDING_PAGE_URL,
+        google_site_verification=settings.GOOGLE_SITE_VERIFICATION,
+        canonical_url=f"{base}/bots",
+    )
     return HTMLResponse(content=html)
 
 @app.get("/leads", response_class=HTMLResponse, include_in_schema=False)
@@ -138,13 +147,26 @@ async def leads_page(request: Request):
         "sources": sources,
     }
     template = templates.env.get_template("leads.html")
-    html = template.render(request=request, stats=stats, landing_url=settings.LANDING_PAGE_URL)
+    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    html = template.render(
+        request=request,
+        stats=stats,
+        landing_url=settings.LANDING_PAGE_URL,
+        google_site_verification=settings.GOOGLE_SITE_VERIFICATION,
+        canonical_url=f"{base}/leads",
+    )
     return HTMLResponse(content=html)
 
 @app.get("/subscription", response_class=HTMLResponse, include_in_schema=False)
 async def subscription_page(request: Request):
     template = templates.env.get_template("subscription.html")
-    html = template.render(request=request, landing_url=settings.LANDING_PAGE_URL)
+    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    html = template.render(
+        request=request,
+        landing_url=settings.LANDING_PAGE_URL,
+        google_site_verification=settings.GOOGLE_SITE_VERIFICATION,
+        canonical_url=f"{base}/subscription",
+    )
     return HTMLResponse(content=html)
 
 @app.middleware("http")

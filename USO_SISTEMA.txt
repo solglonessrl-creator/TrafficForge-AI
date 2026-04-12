@@ -53,6 +53,8 @@ Variables recomendadas:
 - GEMINI_API_KEY
 - GEMINI_MODEL (opcional, si tu cuenta no soporta gemini-2.0)
 - LANDING_PAGE_URL
+- GOOGLE_SITE_VERIFICATION (Search Console)
+- PUBLIC_BASE_URL (para sitemap absoluto)
 
 6) SUPABASE (RECOMENDADO PARA PRODUCCIÓN)
 Para que los datos NO se pierdan en Railway, crea las tablas en Supabase:
