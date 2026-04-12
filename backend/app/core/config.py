@@ -28,6 +28,7 @@ def has_real_secret(value: Optional[str]) -> bool:
 class Settings(BaseSettings):
     PROJECT_NAME: str = "TrafficForge AI Publicidad 24/7"
     LANDING_PAGE_URL: str = "https://librodeautoayuda.netlify.app"
+    PUBLIC_BASE_URL: str = ""
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
     OPENAI_API_KEY: str = ""

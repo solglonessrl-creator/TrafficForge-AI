@@ -3,8 +3,10 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from starlette.responses import RedirectResponse
 from datetime import datetime, timezone
 from .core.config import settings
 from .core.scheduler import start_scheduler, stop_scheduler
@@ -15,6 +17,13 @@ app = FastAPI(title=settings.PROJECT_NAME, docs_url=None, redoc_url=None)
 
 # Configuración de Jinja2
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
+
+app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent / "static")), name="static")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_ico():
+    return RedirectResponse(url="/static/favicon.svg")
 
 
 @app.get("/docs", include_in_schema=False)

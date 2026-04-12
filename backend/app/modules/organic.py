@@ -477,18 +477,20 @@ async def blog_post(slug: str, request: Request):
 
 
 @router.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
-async def robots():
-    return "User-agent: *\nAllow: /\nSitemap: /sitemap.xml\n"
+async def robots(request: Request):
+    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    return f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n"
 
 
 @router.get("/sitemap.xml", include_in_schema=False)
-async def sitemap():
+async def sitemap(request: Request):
     posts = list_published_posts()
-    urls = ["<url><loc>/</loc></url>", "<url><loc>/blog</loc></url>"]
+    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    urls = [f"<url><loc>{base}/</loc></url>", f"<url><loc>{base}/blog</loc></url>"]
     for p in posts[:2000]:
         slug = p.get("slug")
         if slug:
-            urls.append(f"<url><loc>/blog/{slug}</loc></url>")
+            urls.append(f"<url><loc>{base}/blog/{slug}</loc></url>")
     body = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
     body += "\n".join(urls)
     body += "\n</urlset>\n"
