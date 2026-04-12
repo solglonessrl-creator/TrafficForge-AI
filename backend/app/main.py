@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from starlette.responses import RedirectResponse
+from starlette.middleware.gzip import GZipMiddleware
 from datetime import datetime, timezone
 from .core.config import settings
 from .core.scheduler import start_scheduler, stop_scheduler
@@ -14,6 +15,7 @@ from .core import repo
 from .modules import traffic, automation, chatbot, funnel, email_service, analysis, organic
 
 app = FastAPI(title=settings.PROJECT_NAME, docs_url=None, redoc_url=None)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Configuración de Jinja2
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="560" viewBox="0 0 420 560">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#ef4444"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="560" rx="26" fill="url(#g)"/>
+  <text x="40" y="120" font-family="Arial, sans-serif" font-size="30" font-weight="900" fill="#ffffff">El Despertar</text>
+  <text x="40" y="160" font-family="Arial, sans-serif" font-size="30" font-weight="900" fill="#ffffff">Financiero</text>
+  <text x="40" y="220" font-family="Arial, sans-serif" font-size="18" fill="#fff7ed">Hábitos · Finanzas · Estrategia</text>
+  <text x="40" y="520" font-family="Arial, sans-serif" font-size="16" fill="#fff7ed">Santo Montilla</text>
+</svg>
+

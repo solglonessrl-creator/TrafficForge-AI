@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="560" viewBox="0 0 420 560">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="560" rx="26" fill="url(#g)"/>
+  <text x="40" y="120" font-family="Arial, sans-serif" font-size="32" font-weight="900" fill="#ffffff">Reinventa</text>
+  <text x="40" y="160" font-family="Arial, sans-serif" font-size="32" font-weight="900" fill="#ffffff">tu Destino</text>
+  <text x="40" y="220" font-family="Arial, sans-serif" font-size="18" fill="#e2e8f0">Disciplina · Mindset · Acción</text>
+  <text x="40" y="520" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Santo Montilla</text>
+</svg>
+

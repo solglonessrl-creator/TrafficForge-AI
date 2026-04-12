@@ -332,10 +332,19 @@ Fuente: {topic_link}
 Requisitos:
 - Escribe en español neutral.
 - No menciones la fuente.
-- Incluye: 1 H1, 5 H2, listas, ejemplos, y un CTA suave al final.
-- El CTA debe invitar a probar {brand} para automatizar marketing (sin promesas exageradas).
-- El CTA debe incluir un enlace HTML clickable a: {landing}
-- Devuelve SOLO HTML válido (sin markdown, sin ```).
+- Incluye: 1 H1, 6-10 H2, listas, ejemplos y pasos accionables.
+- Optimiza para intención de búsqueda (informativa + comercial suave).
+- Integra naturalmente 8-15 palabras clave secundarias y sinónimos relacionados al tema.
+- Añade una sección "Preguntas frecuentes" con 5 FAQs (pregunta en <h3> + respuesta en <p>).
+- Añade al final un bloque JSON-LD FAQPage dentro de <script type="application/ld+json"> (válido) con esas 5 FAQs.
+- Añade enlaces internos:
+  - Un enlace a /blog con el anchor "ver más artículos".
+  - Un enlace al home / con el anchor "TrafficForge AI".
+- Añade un CTA suave al final:
+  - Debe invitar a probar {brand} para automatizar marketing (sin promesas exageradas).
+  - Debe incluir un enlace HTML clickable a: {landing}
+- Buenas prácticas: párrafos cortos, tablas solo si aporta, y evita relleno.
+- Devuelve SOLO HTML válido (sin markdown, sin ```), empezando por <h1> y sin <html>/<head>/<body>.
 
 Genera el artículo ahora.
 """.strip()
