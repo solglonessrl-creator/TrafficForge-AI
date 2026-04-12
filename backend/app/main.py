@@ -113,6 +113,16 @@ async def dashboard_api():
     bots = _bots_preview()
     return JSONResponse({"stats": stats, "bots": bots, "now": now, "today": _format_today_es()})
 
+@app.get("/seo/verification", include_in_schema=False)
+async def seo_verification():
+    return JSONResponse(
+        {
+            "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
+            "public_base_url": settings.PUBLIC_BASE_URL,
+            "enabled": bool(settings.GOOGLE_SITE_VERIFICATION),
+        }
+    )
+
 @app.get("/bots", response_class=HTMLResponse, include_in_schema=False)
 async def bots_page(request: Request):
     bots = repo.list_tasks(limit=200)

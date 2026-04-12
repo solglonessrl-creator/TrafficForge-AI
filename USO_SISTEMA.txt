@@ -56,6 +56,9 @@ Variables recomendadas:
 - GOOGLE_SITE_VERIFICATION (Search Console)
 - PUBLIC_BASE_URL (para sitemap absoluto)
 
+Verificación rápida (producción):
+- /seo/verification debe indicar enabled=true
+
 6) SUPABASE (RECOMENDADO PARA PRODUCCIÓN)
 Para que los datos NO se pierdan en Railway, crea las tablas en Supabase:
 1) Supabase Dashboard -> SQL Editor
