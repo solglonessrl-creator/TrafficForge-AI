@@ -55,6 +55,18 @@ def _meta_description_from_html(html: str, limit: int = 160) -> str:
     return cut.strip()
 
 
+def _effective_public_base_url(request: Request) -> str:
+    if settings.PUBLIC_BASE_URL:
+        return settings.PUBLIC_BASE_URL.rstrip("/")
+    proto = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").split(",")[0].strip()
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc).split(",")[0].strip()
+    if not host:
+        return str(request.base_url).rstrip("/")
+    if proto not in ("http", "https"):
+        proto = "https"
+    return f"{proto}://{host}"
+
+
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -477,7 +489,7 @@ async def blog_index(request: Request):
     posts = list_published_posts()
     track_pageview("/blog", request.headers.get("referer"))
     template = templates.env.get_template("blog_index.html")
-    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    base = _effective_public_base_url(request)
     html = template.render(
         request=request,
         posts=posts,
@@ -496,7 +508,7 @@ async def blog_post(slug: str, request: Request):
         raise HTTPException(status_code=404, detail="Artículo no encontrado.")
     track_pageview(f"/blog/{slug}", request.headers.get("referer"))
     template = templates.env.get_template("blog_post.html")
-    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    base = _effective_public_base_url(request)
     canonical = f"{base}/blog/{slug}"
     html = template.render(
         request=request,
@@ -511,14 +523,14 @@ async def blog_post(slug: str, request: Request):
 
 @router.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 async def robots(request: Request):
-    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    base = _effective_public_base_url(request)
     return f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n"
 
 
 @router.get("/sitemap.xml", include_in_schema=False)
 async def sitemap(request: Request):
     posts = list_published_posts()
-    base = (settings.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    base = _effective_public_base_url(request)
     urls = [f"<url><loc>{base}/</loc></url>", f"<url><loc>{base}/blog</loc></url>"]
     for p in posts[:2000]:
         slug = p.get("slug")
@@ -528,3 +540,8 @@ async def sitemap(request: Request):
     body += "\n".join(urls)
     body += "\n</urlset>\n"
     return Response(content=body, media_type="application/xml")
+
+
+@router.get("/sitemaps.xml", include_in_schema=False)
+async def sitemap_alias(request: Request):
+    return await sitemap(request)
